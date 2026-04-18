@@ -1,6 +1,7 @@
 import os, sounddevice as sd, numpy as np, wave, tempfile
 from openai import OpenAI
 from dotenv import load_dotenv
+from playsound import playsound
 
 load_dotenv()
 client = OpenAI()
@@ -28,11 +29,21 @@ def think(text):
 
 def speak(text):
     resp = client.audio.speech.create(model="tts-1", voice="alloy", input=text)
-    out = tempfile.mktemp(suffix=".mp3"); resp.stream_to_file(out)
-    os.system(f"ffplay -autoexit -nodisp {out}")  
+    out = tempfile.mktemp(suffix=".mp3")
+    resp.write_to_file(out)
+    playsound(out)  
 
 if __name__ == "__main__":
-    wav = record()
-    user_text = transcribe(wav); print("USER:", user_text)
-    reply = think(user_text);    print("BOT :", reply)
-    speak(reply)
+    while True:
+        wav = record()
+        user_text = transcribe(wav)
+        print("USER:", user_text)
+        
+        # Check for exit condition
+        if user_text.lower().strip() == "goodbye":
+            print("\nGoodbye!")
+            break
+        
+        reply = think(user_text)
+        print("BOT :", reply)
+        speak(reply)
